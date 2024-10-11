@@ -51,13 +51,10 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 })
 ):
     async with async_session_maker() as session:
-        hotels_repository = HotelsRepository(session)
-        result = await hotels_repository.add(title=hotel_data.title, location=hotel_data.location)
+        hotels_repository = await HotelsRepository(session).add(hotel_data)
         await session.commit()
 
-    return {'hotel_id': result.id,
-            'hotel_title': result.title,
-            'hotel_location': result.location}
+    return hotels_repository
 
 
 @router.put("/{hotel_id}")
