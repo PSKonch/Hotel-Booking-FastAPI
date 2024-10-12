@@ -7,6 +7,7 @@ from src.database import async_session_maker
 from src.models.hotels import HotelsModel
 from src.schemas.hotels import Hotel, HotelPATCH
 from repositories.hotels import HotelsRepository
+from repositories.base import BaseRepository
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -58,12 +59,12 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 
 
 @router.put("/{hotel_id}")
-def edit_hotel(hotel_id: int, hotel_data: Hotel):
-    global hotels
-    hotel = [hotel for hotel in hotels if hotel["id"] == hotel_id][0]
-    hotel["title"] = hotel_data.title
-    hotel["name"] = hotel_data.name
-    return {"status": "OK"}
+async def edit_hotel(hotel_id: int, hotel_data: Hotel):
+    async with async_session_maker() as session:
+        hotels_repository = await HotelsRepository(session).update(hotel_id, hotel_data)
+        await session.commit()
+    
+    return hotels_repository
 
 
 @router.patch(
@@ -85,7 +86,9 @@ def partially_edit_hotel(
 
 
 @router.delete("/{hotel_id}")
-def delete_hotel(hotel_id: int):
-    global hotels
-    hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
-    return {"status": "OK"}
+async def delete_hotel(hotel_id: int):
+    async with async_session_maker() as session:
+        hotels_repository = await HotelsRepository(session).delete(hotel_id)
+        await session.commit()
+
+    return hotels_repository
