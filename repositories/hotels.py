@@ -8,11 +8,11 @@ class HotelsRepository(BaseRepository):
     model = HotelsModel
 
     async def get_all(self, location, title, limit, offset):
-        query = select(HotelsModel)
+        query = select(self.model)
         if location:
-            query = query.filter(func.lower(HotelsModel.location).contains(location.strip().lower()))
+            query = query.filter(func.lower(self.model.location).contains(location.strip().lower()))
         if title:
-            query = query.filter(func.lower(HotelsModel.title).contains(title.strip().lower()))
+            query = query.filter(func.lower(self.model.title).contains(title.strip().lower()))
         query = (
             query
             .limit(limit)
