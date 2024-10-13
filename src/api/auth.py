@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Body, Query, HTTPException, status, Response, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Body, Query, HTTPException, status, Response, Depends, Request
 
 from passlib.context import CryptContext
 
@@ -11,6 +12,7 @@ from src.services.auth import AuthService
 from src.repositories.users import UsersRepository
 from src.schemas.users import User, UserAdd, UserRequestAdd
 from src.models.users import UsersModel
+from src.api.dependencies import UserIdDep, get_token
 
 router = APIRouter(prefix='/auth', tags=['Авторизация и Аутентификация'])
 
@@ -28,7 +30,7 @@ async def register_user(data: UserRequestAdd):
     }
 
 @router.post('/login')
-async def login_user(data: UserRequestAdd, resonse: Response):
+async def login_user(data: UserRequestAdd, response: Response):
     async with async_session_maker() as session:
         user = await UsersRepository(session).get_user_with_hashed_password(email=data.email)
 
@@ -39,19 +41,16 @@ async def login_user(data: UserRequestAdd, resonse: Response):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Неверный пароль')
         
         access_token = AuthService().create_access_token(({'user_id': user.id}))
-        resonse.set_cookie('access_token', access_token)
+        response.set_cookie('access_token', access_token)
 
         return {'access_toket': access_token}
 
-@router.get('/only_auth')
-async def only_auth(request: Request, email: EmailStr): 
+@router.get('/me')
+async def get_me(user_id: UserIdDep): 
     async with async_session_maker() as session:
-        user = await UsersRepository(session).get_user_with_hashed_password(email=email)
+        user = await UsersRepository(session).get_one_or_none(id=user_id)
+        return user
 
-        if not user:
-            return {'token': None}
-        
-        access_token = request.cookies.get('access_token')
 
-        return {'token': access_token}
+
 
