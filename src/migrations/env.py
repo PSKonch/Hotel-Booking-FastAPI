@@ -10,6 +10,7 @@ from alembic import context
 from src.database import Base
 from src.models.hotels import HotelsModel
 from src.models.rooms import RoomsModel
+from src.models.users import UsersModel
 
 from src.config import settings
 

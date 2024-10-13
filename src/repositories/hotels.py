@@ -1,6 +1,6 @@
-from repositories.base import BaseRepository
+from src.repositories.base import BaseRepository
 from src.models.hotels import HotelsModel
-from src.schemas.hotels import Hotel, HotelPATCH
+from src.schemas.hotels import Hotel, HotelPatch
 
 from sqlalchemy import func, insert, select, update
 
