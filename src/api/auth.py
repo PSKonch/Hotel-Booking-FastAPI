@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Body, Query, HTTPException, status, Response
+from fastapi import APIRouter, Body, Query, HTTPException, status, Response, Request
 
 from passlib.context import CryptContext
 
 import jwt
+from pydantic import EmailStr
 
 from src.database import async_session_maker
 from src.services.auth import AuthService
@@ -41,3 +42,16 @@ async def login_user(data: UserRequestAdd, resonse: Response):
         resonse.set_cookie('access_token', access_token)
 
         return {'access_toket': access_token}
+
+@router.get('/only_auth')
+async def only_auth(request: Request, email: EmailStr): 
+    async with async_session_maker() as session:
+        user = await UsersRepository(session).get_user_with_hashed_password(email=email)
+
+        if not user:
+            return {'token': None}
+        
+        access_token = request.cookies.get('access_token')
+
+        return {'token': access_token}
+
