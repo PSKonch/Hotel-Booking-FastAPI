@@ -23,4 +23,5 @@ def get_current_user_id(token: Annotated[str, Depends(get_token)]) -> int:
     decoded_token = AuthService().decode_token(token)
     return decoded_token['user_id']
 
+
 UserIdDep = Annotated[int, Depends(get_current_user_id)]

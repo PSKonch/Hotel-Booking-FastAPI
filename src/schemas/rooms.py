@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 class RoomAdd(BaseModel):
     hotel_id: int
@@ -13,6 +13,6 @@ class Room(RoomAdd):
     model_config = ConfigDict(from_attributes=True)
 
 class RoomPatch(BaseModel):
-    description: str | None
-    price: int | None
-    quantity: int | None
+    description: str | None = Field(None)
+    price: int | None = Field(None)
+    quantity: int | None = Field(None)
