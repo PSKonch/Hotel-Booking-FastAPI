@@ -1,47 +1,59 @@
-from fastapi import Query, status, APIRouter, HTTPException, Body
+from fastapi import APIRouter, Body
 
 from src.database import async_session_maker
-from src.schemas.rooms import Room, RoomAdd, RoomPatch
 from src.repositories.rooms import RoomsRepository
-from src.repositories.hotels import HotelsRepository
+from src.schemas.rooms import RoomAdd, RoomAddRequest, RoomPatchRequest, RoomPatch
 
-router = APIRouter(prefix='/hotels', tags=['Номера'])
+router = APIRouter(prefix="/hotels", tags=["Номера"])
 
-@router.get('/{hotel_title}/rooms')
-async def get_rooms(hotel_title: str):
-    async with async_session_maker() as session:
-        hotel = await HotelsRepository(session).get_one_or_none(title=hotel_title)
-        rooms = await RoomsRepository(session).get_all(hotel_id=hotel.id)
-        print(rooms)
-        return rooms
-    
-@router.post('/{hotel_title}/rooms')
-async def create_room(data: RoomAdd):
-    async with async_session_maker() as session:
-        rooms_add = await RoomsRepository(session).add(data)
-        await session.commit()
-    return rooms_add
 
-@router.patch('/{hotel_title}/rooms/{room_id}')
-async def partially_edit_hotel(hotel_title: str, room_id: int, data: RoomPatch):
+@router.get("/{hotel_id}/rooms")
+async def get_rooms(hotel_id: int):
     async with async_session_maker() as session:
-        hotel = await HotelsRepository(session).get_one_or_none(title=hotel_title)
-        room_edit = await RoomsRepository(session).edit(data=data, exclude=True, id=room_id, hotel_id=hotel.id)
-        await session.commit()
-    return room_edit
+        return await RoomsRepository(session).get_filtered(hotel_id=hotel_id)
 
-@router.put('/{hotel_title}/rooms/{room_id}')
-async def partially_edit_hotel(hotel_title: str, room_id: int, data: RoomPatch):
+
+@router.get("/{hotel_id}/rooms/{room_id}")
+async def get_room(hotel_id: int, room_id: int):
     async with async_session_maker() as session:
-        hotel = await HotelsRepository(session).get_one_or_none(title=hotel_title)
-        room_edit = await RoomsRepository(session).edit(data=data, exclude=False, id=room_id, hotel_id=hotel.id)
+        return await RoomsRepository(session).get_one_or_none(id=room_id, hotel_id=hotel_id)
+
+
+@router.post("/{hotel_id}/rooms")
+async def create_room(hotel_id: int, room_data: RoomAddRequest = Body()):
+    _room_data = RoomAdd(hotel_id=hotel_id, **room_data.model_dump())
+    async with async_session_maker() as session:
+        room = await RoomsRepository(session).add(_room_data)
         await session.commit()
 
-@router.delete('/{hotel_title}/rooms/{room_id}')
-async def delete_room(hotel_title: str, room_id: int):
-    async with async_session_maker() as session:
-        hotel = await HotelsRepository(session).get_one_or_none(title=hotel_title)
-        await RoomsRepository(session).delete(id=room_id, hotel_id=hotel.id)
-        await session.commit()
+    return {"status": "OK", "data": room}
 
-    return {'status': 'ok'}
+
+@router.put("/{hotel_id}/rooms/{room_id}")
+async def edit_room(hotel_id: int, room_id: int, room_data: RoomAddRequest):
+    _room_data = RoomAdd(hotel_id=hotel_id, **room_data.model_dump())
+    async with async_session_maker() as session:
+        await RoomsRepository(session).edit(_room_data, id=room_id)
+        await session.commit()
+    return {"status": "OK"}
+
+
+@router.patch("/{hotel_id}/rooms/{room_id}")
+async def partially_edit_room(
+        hotel_id: int,
+        room_id: int,
+        room_data: RoomPatchRequest,
+):
+    _room_data = RoomPatch(hotel_id=hotel_id, **room_data.model_dump(exclude_unset=True))
+    async with async_session_maker() as session:
+        await RoomsRepository(session).edit(_room_data, exclude_unset=True, id=room_id, hotel_id=hotel_id)
+        await session.commit()
+    return {"status": "OK"}
+
+
+@router.delete("/{hotel_id}/rooms/{room_id}")
+async def delete_room(hotel_id: int, room_id: int):
+    async with async_session_maker() as session:
+        await RoomsRepository(session).delete(id=room_id, hotel_id=hotel_id)
+        await session.commit()
+    return {"status": "OK"}
