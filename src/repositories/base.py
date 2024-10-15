@@ -32,9 +32,13 @@ class BaseRepository:
         model = result.scalars().one()
         return self.schema.model_validate(model, from_attributes=True)
     
-    async def edit(self, data: BaseModel, exclude: bool, **filter_by) -> None:
-        stmt = update(self.model).filter_by(**filter_by).values(**data.model_dump(exclude_unset=exclude))
-        await self.session.execute(stmt)
+    async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
+        update_stmt = (
+            update(self.model)
+            .filter_by(**filter_by)
+            .values(**data.model_dump(exclude_unset=exclude_unset))
+        )
+        await self.session.execute(update_stmt)
 
     async def delete(self, **filter_by) -> None:
         stmt = delete(self.model).filter_by(**filter_by)
