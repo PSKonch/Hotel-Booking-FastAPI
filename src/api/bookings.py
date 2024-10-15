@@ -7,8 +7,9 @@ from src.services.auth import AuthService
 router = APIRouter(prefix='/bookings', tags=['Бронирование'])
 
 @router.post('')
-async def create_booking(db: DBDep, data: BookingRequestAdd, user_id: UserIdDep):
-    full_data = BookingAdd(user_id=user_id, **data.model_dump())
+async def create_booking(db: DBDep, data: BookingRequestAdd, user_id: UserIdDep, room_id: int):
+    room = await db.rooms.get_one_or_none(id=room_id)
+    full_data = BookingAdd(room_id=room_id, user_id=user_id, **data.model_dump(), price=room.price)
     booking = await db.bookings.add(full_data)
     await db.commit()
     return {'booking': booking}
