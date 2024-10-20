@@ -17,6 +17,7 @@ class BookingsModel(Base):
     date_to: Mapped[date]
     price: Mapped[int]
 
-    @hybrid_property
-    def total_cost(self) -> int:
-        return self.price * (self.date_to - self.date_from).days
+@hybrid_property
+def total_cost(self) -> int:
+    nights = (self.date_to - self.date_from).days
+    return self.price * nights
