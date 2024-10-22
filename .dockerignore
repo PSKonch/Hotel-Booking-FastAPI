@@ -1,0 +1,15 @@
+venv/
+
+*.vscode/
+*.idea/
+
+.env
+
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+README.md
+
+Dockerfile
