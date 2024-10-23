@@ -52,6 +52,10 @@ class BaseRepository:
         stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(stmt)
 
+    async def remove_bulk(self, ids: list[int]):
+        stmt = delete(self.model).where(self.model.id.in_(ids))
+        await self.session.execute(stmt)
+
   
         
         

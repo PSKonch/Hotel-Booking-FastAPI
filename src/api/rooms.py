@@ -49,9 +49,31 @@ async def edit_room(
         db: DBDep,
 ):
     _room_data = RoomAdd(hotel_id=hotel_id, **room_data.model_dump())
-    await db.rooms.edit(_room_data, id=room_id)
+    room = await db.rooms.edit(_room_data, id=room_id)
+    
+    existing_facilities = await db.rooms_facilities.get_filtered(room_id=room_id)
+    existing_facilities_ids = {facility.facility_id for facility in existing_facilities}
+
+    new_facility_ids = set(room_data.facilities_ids or [])
+
+    facilities_to_remove = existing_facilities_ids - new_facility_ids
+
+    facilities_to_add = new_facility_ids - existing_facilities_ids
+
+    if facilities_to_remove:
+        await db.rooms_facilities.remove_bulk([
+            facility.id for facility in existing_facilities if facility.facility_id in facilities_to_remove
+        ])
+
+    if facilities_to_add:
+        rooms_facilities_to_add = [
+            RoomFacilityAdd(room_id=room_id, facility_id=facility_id_) 
+            for facility_id_ in facilities_to_add
+        ]
+        await db.rooms_facilities.add_bulk(rooms_facilities_to_add)
+
     await db.commit()
-    return {"status": "OK"}
+    return {'status': 'ok'}
 
 
 @router.patch("/{hotel_id}/rooms/{room_id}")
@@ -62,9 +84,31 @@ async def partially_edit_room(
         db: DBDep,
 ):
     _room_data = RoomPatch(hotel_id=hotel_id, **room_data.model_dump(exclude_unset=True))
-    await db.rooms.edit(_room_data, exclude_unset=True, id=room_id, hotel_id=hotel_id)
+    room = await db.rooms.edit(_room_data, exclude_unset=True, id=room_id, hotel_id=hotel_id)
+
+    existing_facilities = await db.rooms_facilities.get_filtered(room_id=room_id)
+    existing_facilities_ids = {facility.facility_id for facility in existing_facilities}
+
+    new_facility_ids = set(room_data.facilities_ids or [])
+
+    facilities_to_remove = existing_facilities_ids - new_facility_ids
+
+    facilities_to_add = new_facility_ids - existing_facilities_ids
+
+    if facilities_to_remove:
+        await db.rooms_facilities.remove_bulk([
+            facility.id for facility in existing_facilities if facility.facility_id in facilities_to_remove
+        ])
+
+    if facilities_to_add:
+        rooms_facilities_to_add = [
+            RoomFacilityAdd(room_id=room_id, facility_id=facility_id_) 
+            for facility_id_ in facilities_to_add
+        ]
+        await db.rooms_facilities.add_bulk(rooms_facilities_to_add)
+
     await db.commit()
-    return {"status": "OK"}
+    return {'status': 'ok'}
 
 
 @router.delete("/{hotel_id}/rooms/{room_id}")
