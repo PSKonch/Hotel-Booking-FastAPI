@@ -33,3 +33,4 @@ def filter_available_rooms_or_hotels(date_from: date, date_to: date, hotel_id: i
             .distinct()
         )
         return available_hotels
+    
