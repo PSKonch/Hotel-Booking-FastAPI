@@ -17,35 +17,24 @@ async def get_hotels(
         date_from: date | None = Query(None, description="Дата начала бронирования"),
         date_to: date | None = Query(None, description="Дата окончания бронирования"),
 ):
-    per_page = pagination.per_page or 5
-
-    if date_from and date_to:
-        hotels_query = db.hotels.get_available_hotels(
-            date_from=date_from, 
-            date_to=date_to
-        )
         
-        if location:
-            hotels_query = hotels_query.filter(HotelsModel.location.ilike(f"%{location}%"))
+        per_page = pagination.per_page or 5
         
-        if title:
-            hotels_query = hotels_query.filter(HotelsModel.title.ilike(f"%{title}%"))
-        
-        result = await db.session.execute(
-            hotels_query.limit(per_page).offset(per_page * (pagination.page - 1))
-        )
-        
-        hotels = result.scalars().all()
-
-    else:
-        hotels = await db.hotels.get_all(
+        hotels = await db.hotels.get_filtered_by_time(
+            date_from=date_from,
+            date_to=date_to,
             location=location,
             title=title,
             limit=per_page,
             offset=per_page * (pagination.page - 1)
         )
-    
-    return hotels
+
+        return hotels
+
+
+@router.get("/all")
+async def get_all_hotels(db: DBDep):
+     return await db.hotels.get_all()
 
 
 @router.get("/{hotel_id}")
