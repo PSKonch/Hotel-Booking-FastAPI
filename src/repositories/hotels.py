@@ -3,12 +3,13 @@ from src.repositories.utils import filter_available_rooms_or_hotels
 from src.repositories.base import BaseRepository
 from src.models.hotels import HotelsModel
 from src.schemas.hotels import Hotel, HotelPatch
+from src.repositories.mappers.mappers import HotelDataMapper
 
 from sqlalchemy import func, insert, select, update
 
 class HotelsRepository(BaseRepository):
     model = HotelsModel
-    schema = Hotel
+    mapper = HotelDataMapper
 
     async def get_filtered_by_time(
         self, 
@@ -30,6 +31,6 @@ class HotelsRepository(BaseRepository):
         hotels_query = hotels_query.limit(limit).offset(offset)
         result = await self.session.execute(hotels_query)
         
-        return [self.schema.model_validate(hotel) for hotel in result.scalars().all()]
+        return [self.mapper.map_to_domain_entity(hotel) for hotel in result.scalars().all()]
     
 
